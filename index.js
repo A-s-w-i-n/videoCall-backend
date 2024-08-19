@@ -8,7 +8,7 @@ app.use(cors());
 const server = http.createServer(app);
 
 const io = new SocketIoServer(server, {
-  cors: { origin: "http://localhost:5173" },
+  cors: { origin: "video-call-usingwebrtc.vercel.app" },
 });
 
 const port = 5000;
