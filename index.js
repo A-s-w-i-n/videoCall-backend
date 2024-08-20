@@ -8,26 +8,57 @@ app.use(cors());
 const server = http.createServer(app);
 
 const io = new SocketIoServer(server, {
-  cors: { origin: "video-call-usingwebrtc.vercel.app" },
+  cors: { origin: "https://video-call-usingwebrtc.vercel.app" },
 });
+// video-call-usingwebrtc.vercel.app
+// http://video-call-usingwebrtc.vercel.app
 
 const port = 5000;
+const rooms = new Map();
 
 io.on("connection", (socket) => {
   console.log("New client connected");
+
+  socket.on("createRoom", (roomId) => {
+    if (!rooms.has(roomId)) {
+      rooms.set(roomId, new Set([socket.id]));
+      socket.join(roomId);
+      console.log(`RoomID ${roomId} CreatedBy ${socket.id}`);
+      socket.emit("roomCreated", roomId);
+    } else {
+      socket.emit("roomError", "Room alredy exist");
+    }
+  });
+
   socket.on("joinRoom", (roomId) => {
-    socket.join(roomId);
-    console.log(`Client ${socket.id} joined room ${roomId}`);
-    // Notify other clients in the room
-    socket.to(roomId).emit("message", { type: "ready", roomId });
+    if (rooms.has(roomId)) {
+      rooms.get(roomId).add(socket.id);
+      socket.join(roomId);
+      console.log(`User ${socket.id} Joined ${roomId}`);
+      socket.to(roomId).emit("userJoined", socket.id);
+      socket.emit("roomJoined", roomId);
+    } else {
+      socket.emit("roomError", "Room dosent Exist");
+    }
   });
 
   socket.on("message", (message) => {
-    socket.broadcast.emit("message", message);
-    console.log(message, "fsfdssfsd");
+    if (message.roomId) {
+      socket.to(message.roomId).emit("message", message);
+    }
   });
 
   socket.on("disconnect", () => {
+    rooms.forEach((clients, roomId) => {
+      if (clients.has(socket.id)) {
+        clients.delete(socket.id);
+        if (clients.size == 0) {
+          rooms.delete(roomId);
+        } else {
+          socket.to(roomId).emit("userLeft", socket.id);
+        }
+      }
+    });
     console.log("Client disconnected");
   });
 });
