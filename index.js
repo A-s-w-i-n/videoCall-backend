@@ -8,9 +8,9 @@ app.use(cors());
 const server = http.createServer(app);
 
 const io = new SocketIoServer(server, {
-  cors: { origin: "https://video-call-usingwebrtc.vercel.app" },
+  cors: { origin: "http://video-call-usingwebrtc.vercel.app" },
 });
-// video-call-usingwebrtc.vercel.app
+// http://localhost:5173/
 // http://video-call-usingwebrtc.vercel.app
 
 const port = 5000;
@@ -35,6 +35,11 @@ io.on("connection", (socket) => {
       rooms.get(roomId).add(socket.id);
       socket.join(roomId);
       console.log(`User ${socket.id} Joined ${roomId}`);
+
+      const usersInRoom = Array.from(rooms.get(roomId)).filter(
+        (id) => id !== socket.id
+      );
+      socket.emit("roomUsers", usersInRoom);
       socket.to(roomId).emit("userJoined", socket.id);
       socket.emit("roomJoined", roomId);
     } else {
