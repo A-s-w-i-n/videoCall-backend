@@ -8,7 +8,7 @@ app.use(cors());
 const server = http.createServer(app);
 
 const io = new SocketIoServer(server, {
-  cors: { origin: "http://video-call-usingwebrtc.vercel.app" },
+  cors: { origin: "http://localhost:5173" },
 });
 // http://localhost:5173/
 // http://video-call-usingwebrtc.vercel.app
@@ -17,10 +17,10 @@ const port = 5000;
 const rooms = new Map();
 
 io.on("connection", (socket) => {
-  console.log("New client connected");
+  console.log("New client connected");  
 
   socket.on("createRoom", (roomId) => {
-    if (!rooms.has(roomId)) {
+    if (!rooms.has(roomId)) { 
       rooms.set(roomId, new Set([socket.id]));
       socket.join(roomId);
       console.log(`RoomID ${roomId} CreatedBy ${socket.id}`);
@@ -31,15 +31,12 @@ io.on("connection", (socket) => {
   });
 
   socket.on("joinRoom", (roomId) => {
+    console.log(roomId); 
+    
     if (rooms.has(roomId)) {
       rooms.get(roomId).add(socket.id);
       socket.join(roomId);
       console.log(`User ${socket.id} Joined ${roomId}`);
-
-      const usersInRoom = Array.from(rooms.get(roomId)).filter(
-        (id) => id !== socket.id
-      );
-      socket.emit("roomUsers", usersInRoom);
       socket.to(roomId).emit("userJoined", socket.id);
       socket.emit("roomJoined", roomId);
     } else {
@@ -73,6 +70,6 @@ function error(err, req, res, next) {
 
   res.status(500);
   res.send("Internal Server Error");
-}
+} 
 app.use(error);
 server.listen(port);
