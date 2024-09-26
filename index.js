@@ -36,6 +36,7 @@ io.on("connection", (socket) => {
     if (rooms.has(roomId)) {
       rooms.get(roomId).add(socket.id);
       socket.join(roomId);
+      io.to(roomId).emit("roomUsers", Array.from(rooms.get(roomId)));
       console.log(`User ${socket.id} Joined ${roomId}`);
       socket.to(roomId).emit("userJoined", socket.id);
       socket.emit("roomJoined", roomId);
@@ -57,6 +58,7 @@ io.on("connection", (socket) => {
         if (clients.size == 0) {
           rooms.delete(roomId);
         } else {
+          io.to(roomId).emit("roomUsers", Array.from(clients));
           socket.to(roomId).emit("userLeft", socket.id);
         }
       }
